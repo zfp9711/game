@@ -1,0 +1,13 @@
+{
+  "name": "lanternwatch",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "守灯 · 一局约六分钟的网页小游戏",
+  "scripts": {
+    "start": "node server.mjs --open",
+    "serve": "node server.mjs",
+    "test": "node --test tests/",
+    "balance": "node tests/balance.mjs"
+  }
+}

@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#05080d" />
+    <meta name="description" content="《守灯》：一局约六分钟的网页小游戏。守住篝火，用提灯烧退影群。" />
+    <title>守灯 · Lanternwatch</title>
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body>
+    <div id="stage">
+      <canvas id="game" aria-label="守灯游戏画面"></canvas>
+
+      <div id="hud" class="hud is-hidden" aria-hidden="true">
+        <div class="hud-left">
+          <div class="stat fire-stat">
+            <span class="stat-icon" aria-hidden="true">火</span>
+            <div class="track">
+              <i id="fire-bar" class="fill fire"></i>
+            </div>
+            <b id="fire-num">100</b>
+          </div>
+          <div class="stat hp-stat">
+            <span class="stat-icon" aria-hidden="true">命</span>
+            <div class="track">
+              <i id="hp-bar" class="fill hp"></i>
+            </div>
+            <b id="hp-num">100</b>
+          </div>
+          <div class="stat oil-stat">
+            <span class="stat-icon" aria-hidden="true">油</span>
+            <div class="track">
+              <i id="oil-bar" class="fill oil"></i>
+            </div>
+            <b id="oil-num">100</b>
+          </div>
+        </div>
+
+        <div class="hud-right">
+          <div class="wave-line">
+            <span id="wave-name">第一夜</span>
+            <span id="wave-count">1 / 8</span>
+          </div>
+          <div id="wave-dots" class="wave-dots" aria-hidden="true"></div>
+          <div class="score-line">
+            <span class="score-label">得分</span>
+            <b id="score">0</b>
+          </div>
+          <div class="meta-line">
+            <span>击杀 <b id="kills">0</b></span>
+            <span class="dot">·</span>
+            <span id="timer">0:00</span>
+          </div>
+        </div>
+
+        <div id="banner" class="banner" aria-live="polite"></div>
+        <div id="hint" class="hint">按住左键照射 · 空格冲刺 · Esc 暂停</div>
+        <button id="dash-btn" class="dash-btn" type="button">冲刺</button>
+      </div>
+
+      <div id="screen-start" class="screen screen-start">
+        <div class="panel start-panel">
+          <svg class="emblem" viewBox="0 0 120 160" aria-hidden="true">
+            <defs>
+              <radialGradient id="lampGlow">
+                <stop offset="0" stop-color="#ffd79a" stop-opacity="0.85" />
+                <stop offset="0.55" stop-color="#ffb765" stop-opacity="0.22" />
+                <stop offset="1" stop-color="#ffb765" stop-opacity="0" />
+              </radialGradient>
+            </defs>
+            <circle cx="60" cy="86" r="56" fill="url(#lampGlow)" />
+            <path d="M60 20v10" stroke="#a98a63" stroke-width="2" stroke-linecap="round" />
+            <path d="M42 38h36l6 14v62a8 8 0 0 1-8 8H44a8 8 0 0 1-8-8V52z" fill="none" stroke="#c9a06a" stroke-width="1.6" />
+            <rect x="44" y="56" width="32" height="50" rx="6" fill="#ffd79a" opacity="0.16" />
+            <path d="M46 56q14-20 28 0" fill="none" stroke="#c9a06a" stroke-width="1.4" />
+            <path d="M38 112h44" stroke="#c9a06a" stroke-width="1.6" />
+            <circle cx="60" cy="82" r="8" fill="#ffe9c2" opacity="0.7" />
+          </svg>
+          <p class="eyebrow">一夜一局 · 约六分钟</p>
+          <h1 class="title">守灯</h1>
+          <p class="tagline">火不能灭。<br />你是它唯一的守夜人。</p>
+
+          <div class="howto">
+            <div class="howto-item">
+              <div class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></div>
+              <span>在火光周围移动</span>
+            </div>
+            <div class="howto-item">
+              <div class="keys"><kbd class="wide">按住左键</kbd></div>
+              <span>灯焰烧退影群，耗灯油</span>
+            </div>
+            <div class="howto-item">
+              <div class="keys"><kbd class="wide">空格</kbd></div>
+              <span>冲刺穿影，短暂无敌</span>
+            </div>
+          </div>
+
+          <p class="tip">
+            灯油有限。击杀影子会掉落<span class="amber">余烬</span>，靠近即可拾取回油。熬过八夜，影王现形。
+          </p>
+
+          <div class="start-actions">
+            <button id="btn-start" class="btn primary" type="button">开始守夜</button>
+            <button id="btn-help" class="btn ghost" type="button">好玩的诀窍</button>
+          </div>
+
+          <div class="settings-row">
+            <label class="switch">
+              <input id="set-sound" type="checkbox" checked />
+              <span class="switch-track"><i></i></span>
+              <span class="switch-label">音效</span>
+            </label>
+            <label class="switch">
+              <input id="set-shake" type="checkbox" checked />
+              <span class="switch-track"><i></i></span>
+              <span class="switch-label">震屏</span>
+            </label>
+            <label class="switch">
+              <input id="set-motion" type="checkbox" />
+              <span class="switch-track"><i></i></span>
+              <span class="switch-label">减少动态</span>
+            </label>
+          </div>
+
+          <p id="best-line" class="best-line">最佳记录：尚无</p>
+        </div>
+      </div>
+
+      <div id="screen-upgrade" class="screen is-hidden">
+        <div class="panel upgrade-panel">
+          <p class="eyebrow">第 <span id="up-wave">1</span> 夜过去了</p>
+          <h2 class="screen-title">挑一件遗物</h2>
+          <p class="screen-sub">火堆稍作喘息，你也可以。选完立刻继续守夜。</p>
+          <div id="cards" class="cards"></div>
+          <p class="screen-foot">按 <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> 也可以选择</p>
+        </div>
+      </div>
+
+      <div id="screen-pause" class="screen is-hidden">
+        <div class="panel narrow-panel">
+          <p class="eyebrow">夜还长</p>
+          <h2 class="screen-title">暂停</h2>
+          <div class="stack">
+            <button id="btn-resume" class="btn primary" type="button">继续守夜</button>
+            <button id="btn-restart" class="btn ghost" type="button">重新开始</button>
+            <button id="btn-menu" class="btn ghost" type="button">回到篝火</button>
+          </div>
+          <div class="settings-row center">
+            <label class="switch">
+              <input id="set-sound-2" type="checkbox" checked />
+              <span class="switch-track"><i></i></span>
+              <span class="switch-label">音效</span>
+            </label>
+            <label class="switch">
+              <input id="set-shake-2" type="checkbox" checked />
+              <span class="switch-track"><i></i></span>
+              <span class="switch-label">震屏</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div id="screen-end" class="screen is-hidden">
+        <div class="panel end-panel">
+          <p class="eyebrow" id="end-eyebrow">第 8 夜</p>
+          <h2 class="screen-title" id="end-title">火熄了</h2>
+          <p class="screen-sub" id="end-sub">影子漫过了最后一点光。</p>
+
+          <div class="end-stats">
+            <div><span>到达</span><b id="end-wave">第 1 夜</b></div>
+            <div><span>击杀</span><b id="end-kills">0</b></div>
+            <div><span>用时</span><b id="end-time">0:00</b></div>
+            <div><span>得分</span><b id="end-score">0</b></div>
+          </div>
+
+          <p class="best-line" id="end-best">最佳记录：尚无</p>
+
+          <div class="start-actions">
+            <button id="btn-again" class="btn primary" type="button">再来一夜</button>
+            <button id="btn-end-menu" class="btn ghost" type="button">回到篝火</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="screen-help" class="screen is-hidden">
+        <div class="panel narrow-panel">
+          <p class="eyebrow">给第一次值夜的人</p>
+          <h2 class="screen-title">好玩的诀窍</h2>
+          <ul class="tips">
+            <li><b>别一直按着灯。</b>灯油见底就彻底没光，等回油会比你想的慢。</li>
+            <li><b>往外走一点。</b>余烬掉在影子死掉的地方，饿着守火只会越来越穷。</li>
+            <li><b>冲刺是武器。</b>穿过影群能造成伤害，还能躲开扑脸的那一下。</li>
+            <li><b>火堆会替你烧。</b>把影子放进火光里，它们会变慢、掉血。</li>
+            <li><b>不要站在火里等。</b>影子扑到火堆会直接扣火的血，你得在它们到之前拦住。</li>
+          </ul>
+          <button id="btn-help-back" class="btn primary" type="button">知道了</button>
+        </div>
+      </div>
+
+      <div id="toast" class="toast is-hidden"></div>
+    </div>
+
+    <noscript>
+      <div class="noscript">这个游戏需要 JavaScript 才能运行。</div>
+    </noscript>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
